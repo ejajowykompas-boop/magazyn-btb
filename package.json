@@ -1,0 +1,18 @@
+{
+  "name": "magazyn-btb",
+  "version": "1.0.0",
+  "description": "System Magazynowy BTB",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "node api/index.js",
+    "start": "node api/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "@vercel/blob": "^0.15.1"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}

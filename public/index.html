@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Magazynowy BTB</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .sync-status {
+            display: inline-block;
+            padding: 5px 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .sync-status.online {
+            background: rgba(40, 167, 69, 0.8);
+        }
+
+        .sync-status.offline {
+            background: rgba(220, 53, 69, 0.8);
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8f9fa;
+            border: none;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #495057;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.9em;
+            margin: 0 5px;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .product-card {
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            padding: 20px;
+            background: #f8f9fa;
+            transition: all 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: #dee2e6;
+        }
+
+        .product-name {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 10px;
+        }
+
+        .product-info {
+            margin: 8px 0;
+            color: #495057;
+        }
+
+        .product-stock {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #667eea;
+            margin: 15px 0;
+        }
+
+        .product-stock.low {
+            color: #dc3545;
+        }
+
+        .product-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #212529;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+
+        .image-preview {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-input-label:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📦 System Magazynowy BTB</h1>
+            <p>Zarządzaj swoim magazynem w czasie rzeczywistym</p>
+            <div class="sync-status online" id="syncStatus">🟢 Online - Synchronizacja aktywna</div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('overview')">📊 Przegląd</button>
+            <button class="tab" onclick="switchTab('products')">📦 Produkty</button>
+            <button class="tab" onclick="switchTab('releases')">📤 Wydania</button>
+            <button class="tab" onclick="switchTab('history')">📜 Historia</button>
+        </div>
+
+        <div class="content">
+            <!-- PRZEGLĄD -->
+            <div id="overview" class="tab-content active">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalProducts">0</div>
+                        <div class="stat-label">Produktów w bazie</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalStock">0</div>
+                        <div class="stat-label">Suma sztuk</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalReleases">0</div>
+                        <div class="stat-label">Wydań ogółem</div>
+                    </div>
+                </div>
+
+                <h2 style="margin-bottom: 20px;">Produkty w magazynie</h2>
+                <div id="overviewProducts" class="product-grid"></div>
+            </div>
+
+            <!-- PRODUKTY -->
+            <div id="products" class="tab-content">
+                <button class="btn btn-primary" onclick="showAddProductModal()">➕ Dodaj nowy produkt</button>
+                <div id="productsList" class="product-grid"></div>
+            </div>
+
+            <!-- WYDANIA -->
+            <div id="releases" class="tab-content">
+                <button class="btn btn-primary" onclick="showReleaseModal()">📤 Zarejestruj wydanie</button>
+                <div id="recentReleases">
+                    <h3 style="margin: 20px 0;">Ostatnie wydania</h3>
+                    <table id="releasesTable">
+                        <thead>
+                            <tr>
+                                <th>Data i godzina</th>
+                                <th>Produkt</th>
+                                <th>Ilość</th>
+                                <th>Osoba</th>
+                            </tr>
+                        </thead>
+                        <tbody id="releasesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- HISTORIA -->
+            <div id="history" class="tab-content">
+                <h2>Historia wszystkich operacji</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data i godzina</th>
+                            <th>Typ operacji</th>
+                            <th>Produkt</th>
+                            <th>Szczegóły</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DODAWANIA PRODUKTU -->
+    <div id="addProductModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Dodaj nowy produkt</div>
+            <form id="addProductForm">
+                <div class="form-group">
+                    <label>Nazwa produktu *</label>
+                    <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label>Opis</label>
+                    <textarea id="productDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Miejsce w magazynie</label>
+                    <input type="text" id="productLocation" placeholder="np. Regał A-3, Półka 2">
+                </div>
+                <div class="form-group">
+                    <label>Ilość początkowa *</label>
+                    <input type="number" id="productQuantity" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Zdjęcie produktu</label>
+                    <div class="file-input-wrapper">
+                        <label for="productImage" class="file-input-label">
+                            📷 Kliknij, aby dodać zdjęcie
+                        </label>
+                        <input type="file" id="productImage" accept="image/*">
+                    </div>
+                    <img id="imagePreview" class="image-preview" style="display: none;">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-warning" onclick="closeModal('addProductModal')">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">Dodaj produkt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL WYDANIA -->
+    <div id="releaseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Zarejestruj wydanie z magazynu</div>
+            <form id="releaseForm">
+                <div class="form-group">
+                    <label>Produkt *</label>
+                    <select id="releaseProduct" required>
+                        <option value="">Wybierz produkt</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Ilość *</label>
+                    <input type="number" id="releaseQuantity" min="1" required>
+                    <small id="availableStock" style="color: #6c757d;"></small>
+                </div>
+                <div class="form-group">
+                    <label>Osoba odbierająca *</label>
+                    <input type="text" id="releasePerson" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-warning" onclick="closeModal('releaseModal')">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">Zarejestruj wydanie</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Konfiguracja API
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000/api' 
+            : '/api';
+
+        // Dane aplikacji
+        let products = [];
+        let releases = [];
+        let history = [];
+        let isOnline = true;
+
+        // Inicjalizacja
+        async function init() {
+            await loadData();
+            updateOverview();
+            startAutoSync();
+        }
+
+        // Ładowanie danych z serwera
+        async function loadData() {
+            try {
+                const response = await fetch(`${API_URL}/data`);
+                if (response.ok) {
+                    const data = await response.json();
+                    products = data.products || [];
+                    releases = data.releases || [];
+                    history = data.history || [];
+                    setOnlineStatus(true);
+                }
+            } catch (error) {
+                console.error('Błąd ładowania danych:', error);
+                setOnlineStatus(false);
+            }
+        }
+
+        // Status połączenia
+        function setOnlineStatus(online) {
+            isOnline = online;
+            const statusEl = document.getElementById('syncStatus');
+            if (online) {
+                statusEl.className = 'sync-status online';
+                statusEl.textContent = '🟢 Online - Synchronizacja aktywna';
+            } else {
+                statusEl.className = 'sync-status offline';
+                statusEl.textContent = '🔴 Offline - Brak połączenia';
+            }
+        }
+
+        // Auto-synchronizacja co 5 sekund
+        function startAutoSync() {
+            setInterval(async () => {
+                await loadData();
+                if (document.querySelector('.tab-content.active').id === 'overview') {
+                    updateOverview();
+                }
+            }, 5000);
+        }
+
+        // Funkcje nawigacji
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'overview') updateOverview();
+            if (tabName === 'products') renderProducts();
+            if (tabName === 'releases') renderReleases();
+            if (tabName === 'history') renderHistory();
+        }
+
+        // Modals
+        function showAddProductModal() {
+            document.getElementById('addProductModal').classList.add('active');
+        }
+
+        function showReleaseModal() {
+            const select = document.getElementById('releaseProduct');
+            select.innerHTML = '<option value="">Wybierz produkt</option>';
+            products.forEach((product, index) => {
+                if (product.quantity > 0) {
+                    select.innerHTML += `<option value="${product.id}">${product.name} (dostępne: ${product.quantity})</option>`;
+                }
+            });
+            document.getElementById('releaseModal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Preview zdjęcia
+        document.getElementById('productImage').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Dostępny stan
+        document.getElementById('releaseProduct').addEventListener('change', function() {
+            const productId = this.value;
+            const stockInfo = document.getElementById('availableStock');
+            if (productId) {
+                const product = products.find(p => p.id === productId);
+                stockInfo.textContent = `Dostępne: ${product.quantity} sztuk`;
+            } else {
+                stockInfo.textContent = '';
+            }
+        });
+
+        // Dodawanie produktu
+        document.getElementById('addProductForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const imagePreview = document.getElementById('imagePreview');
+            
+            const product = {
+                name: document.getElementById('productName').value,
+                description: document.getElementById('productDescription').value,
+                location: document.getElementById('productLocation').value,
+                quantity: parseInt(document.getElementById('productQuantity').value),
+                image: imagePreview.style.display === 'block' ? imagePreview.src : null
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/products`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(product)
+                });
+                
+                if (response.ok) {
+                    await loadData();
+                    this.reset();
+                    imagePreview.style.display = 'none';
+                    closeModal('addProductModal');
+                    renderProducts();
+                    updateOverview();
+                    alert('✅ Produkt został dodany!');
+                }
+            } catch (error) {
+                alert('❌ Błąd dodawania produktu. Sprawdź połączenie.');
+            }
+        });
+
+        // Rejestrowanie wydania
+        document.getElementById('releaseForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const productId = document.getElementById('releaseProduct').value;
+            const quantity = parseInt(document.getElementById('releaseQuantity').value);
+            const person = document.getElementById('releasePerson').value;
+            
+            const product = products.find(p => p.id === productId);
+            
+            if (product.quantity < quantity) {
+                alert('❌ Niewystarczająca ilość produktu w magazynie!');
+                return;
+            }
+            
+            const release = {
+                productId: productId,
+                quantity: quantity,
+                person: person
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/releases`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(release)
+                });
+                
+                if (response.ok) {
+                    await loadData();
+                    this.reset();
+                    closeModal('releaseModal');
+                    renderReleases();
+                    updateOverview();
+                    alert('✅ Wydanie zostało zarejestrowane!');
+                }
+            } catch (error) {
+                alert('❌ Błąd rejestrowania wydania. Sprawdź połączenie.');
+            }
+        });
+
+        // Renderowanie
+        function renderProducts() {
+            const container = document.getElementById('productsList');
+            
+            if (products.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <h3>Brak produktów</h3>
+                        <p>Kliknij przycisk "Dodaj nowy produkt" aby zacząć</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = products.map(product => `
+                <div class="product-card">
+                    ${product.image ? `<img src="${product.image}" class="product-image">` : `<div class="product-image"></div>`}
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-info">📍 ${product.location || 'Nie określono'}</div>
+                    <div class="product-info">📝 ${product.description || 'Brak opisu'}</div>
+                    <div class="product-stock ${product.quantity < 10 ? 'low' : ''}">
+                        Stan: ${product.quantity} szt.
+                    </div>
+                    <div class="product-actions">
+                        <button class="btn btn-primary btn-small" onclick="editProduct('${product.id}')">✏️ Edytuj</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteProduct('${product.id}')">🗑️ Usuń</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderReleases() {
+            const tbody = document.getElementById('releasesTableBody');
+            
+            if (releases.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #6c757d;">Brak zarejestrowanych wydań</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = releases.slice().reverse().slice(0, 50).map(release => `
+                <tr>
+                    <td>${formatDate(release.date)}</td>
+                    <td>${release.productName}</td>
+                    <td>${release.quantity} szt.</td>
+                    <td>${release.person}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            
+            if (history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: #6c757d;">Brak historii operacji</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = history.map(entry => `
+                <tr>
+                    <td>${formatDate(entry.date)}</td>
+                    <td>${entry.type}</td>
+                    <td>${entry.product}</td>
+                    <td>${entry.details}</td>
+                </tr>
+            `).join('');
+        }
+
+        function updateOverview() {
+            document.getElementById('totalProducts').textContent = products.length;
+            document.getElementById('totalStock').textContent = products.reduce((sum, p) => sum + p.quantity, 0);
+            document.getElementById('totalReleases').textContent = releases.length;
+            
+            const container = document.getElementById('overviewProducts');
+            
+            if (products.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📦</div>
+                        <h3>Brak produktów w magazynie</h3>
+                        <p>Przejdź do zakładki "Produkty" aby dodać pierwszy produkt</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = products.map(product => `
+                <div class="product-card">
+                    ${product.image ? `<img src="${product.image}" class="product-image">` : `<div class="product-image"></div>`}
+                    <div class="product-name">${product.name}</div>
+                    <div class="product-info">📍 ${product.location || 'Nie określono'}</div>
+                    <div class="product-stock ${product.quantity < 10 ? 'low' : ''}">
+                        Stan: ${product.quantity} szt.
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Usuwanie produktu
+        async function deleteProduct(id) {
+            const product = products.find(p => p.id === id);
+            if (confirm(`Czy na pewno chcesz usunąć produkt "${product.name}"?`)) {
+                try {
+                    const response = await fetch(`${API_URL}/products/${id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (response.ok) {
+                        await loadData();
+                        renderProducts();
+                        updateOverview();
+                    }
+                } catch (error) {
+                    alert('❌ Błąd usuwania produktu.');
+                }
+            }
+        }
+
+        // Edycja produktu
+        async function editProduct(id) {
+            const product = products.find(p => p.id === id);
+            const newQuantity = prompt(`Aktualna ilość: ${product.quantity}\nPodaj nową ilość:`, product.quantity);
+            
+            if (newQuantity !== null && !isNaN(newQuantity)) {
+                try {
+                    const response = await fetch(`${API_URL}/products/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ quantity: parseInt(newQuantity) })
+                    });
+                    
+                    if (response.ok) {
+                        await loadData();
+                        renderProducts();
+                        updateOverview();
+                    }
+                } catch (error) {
+                    alert('❌ Błąd aktualizacji produktu.');
+                }
+            }
+        }
+
+        // Pomocnicze
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('pl-PL');
+        }
+
+        // Inicjalizacja przy załadowaniu strony
+        init();
+    </script>
+</body>
+</html>
