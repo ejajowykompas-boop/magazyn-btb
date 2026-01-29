@@ -1111,40 +1111,30 @@
         // Szybkie wydanie produktu (zmniejszenie ilości)
         async function quickReleaseProduct(id, quantity, person) {
             const product = products.find(p => p.id === id);
-            const newQuantity = product.quantity - quantity;
             
             try {
-                const response = await fetch(`${API_URL}/products/${id}`, {
-                    method: 'PUT',
+                // Rejestruj wydanie (backend sam zmniejsza ilość)
+                const release = {
+                    productId: id,
+                    quantity: quantity,
+                    person: person
+                };
+                
+                const releaseResponse = await fetch(`${API_URL}/releases`, {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ quantity: newQuantity })
+                    body: JSON.stringify(release)
                 });
                 
-                if (response.ok) {
-                    // Rejestruj wydanie
-                    const release = {
-                        productId: id,
-                        quantity: quantity,
-                        person: person
-                    };
-                    
-                    const releaseResponse = await fetch(`${API_URL}/releases`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(release)
-                    });
-                    
-                    if (releaseResponse.ok) {
-                        await loadData();
-                        updateOverview();
-                        renderProducts();
-                        renderReleases();
-                        alert(`✅ Zarejestrowano wydanie!\nProdukt: ${product.name}\nIlość: ${quantity} szt.\nOsoba: ${person}\nNowa ilość w magazynie: ${newQuantity} szt.`);
-                    } else {
-                        alert('❌ Błąd rejestrowania wydania w historii.');
-                    }
+                if (releaseResponse.ok) {
+                    await loadData();
+                    updateOverview();
+                    renderProducts();
+                    renderReleases();
+                    const newQuantity = product.quantity - quantity;
+                    alert(`✅ Zarejestrowano wydanie!\nProdukt: ${product.name}\nIlość: ${quantity} szt.\nOsoba: ${person}\nNowa ilość w magazynie: ${newQuantity} szt.`);
                 } else {
-                    alert('❌ Błąd aktualizacji ilości produktu.');
+                    alert('❌ Błąd rejestrowania wydania.');
                 }
             } catch (error) {
                 alert('❌ Błąd rejestrowania wydania.');
