@@ -35,6 +35,76 @@
             text-align: center;
         }
 
+        .search-container {
+            position: relative;
+            max-width: 400px;
+            margin: 20px auto 0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.95);
+            color: #212529;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: white;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            margin-top: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 100;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #212529;
+        }
+
+        .search-result-item:hover {
+            background: #f8f9fa;
+            padding-left: 20px;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-name {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .search-result-category {
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
@@ -523,6 +593,10 @@
             <h1>📦 System Magazynowy BTB</h1>
             <p>Zarządzaj swoim magazynem w czasie rzeczywistym</p>
             <div class="sync-status online" id="syncStatus">🟢 Online - Synchronizacja aktywna</div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="🔍 Wyszukaj produkt..." class="search-input">
+                <div id="searchResults" class="search-results"></div>
+            </div>
         </div>
 
         <div class="tabs">
@@ -659,6 +733,51 @@
             await loadData();
             updateOverview();
             startAutoSync();
+            setupSearch();
+        }
+
+        // Setup wyszukiwarki
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            
+            searchInput.addEventListener('input', function(e) {
+                const query = e.target.value.toLowerCase().trim();
+                
+                if (query.length === 0) {
+                    searchResults.classList.remove('active');
+                    return;
+                }
+                
+                const filtered = products.filter(product => 
+                    product.name.toLowerCase().includes(query) ||
+                    (product.category && product.category.toLowerCase().includes(query)) ||
+                    (product.description && product.description.toLowerCase().includes(query))
+                );
+                
+                if (filtered.length === 0) {
+                    searchResults.innerHTML = '<div class="search-result-item" style="color: #6c757d;">Brak wyników</div>';
+                    searchResults.classList.add('active');
+                    return;
+                }
+                
+                searchResults.innerHTML = filtered.map(product => `
+                    <div class="search-result-item" onclick="goToProduct('${product.id}')">
+                        <div class="search-result-name">${product.name}</div>
+                        <div class="search-result-category">🏷️ ${product.category || 'Bez kategorii'} | Stan: ${product.quantity} szt.</div>
+                    </div>
+                `).join('');
+                
+                searchResults.classList.add('active');
+            });
+            
+            // Zamknij wyszukiwarkę po kliknięciu poza nią
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.classList.remove('active');
+                    searchInput.value = '';
+                }
+            });
         }
 
         // Ładowanie danych z serwera
@@ -724,6 +843,59 @@
             event.target.classList.add('active');
             renderProducts();
             updateOverview();
+        }
+
+        // Przejście do produktu z wyszukiwarki
+        function goToProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            // Ustaw kategorię na kategorię produktu
+            selectedCategory = product.category || 'all';
+            
+            // Zamknij wyszukiwarkę
+            document.getElementById('searchResults').classList.remove('active');
+            document.getElementById('searchInput').value = '';
+            
+            // Przełącz na zakładkę Przegląd
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Aktywuj zakładkę Przegląd manualnie
+            const overviewTab = Array.from(document.querySelectorAll('.tab')).find(tab => tab.textContent.includes('Przegląd'));
+            if (overviewTab) {
+                overviewTab.classList.add('active');
+            }
+            
+            document.getElementById('overview').classList.add('active');
+            
+            // Zaktualizuj kategorię w sidebaku
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const categoryButtons = document.querySelectorAll('.category-item');
+            categoryButtons.forEach(btn => {
+                if (btn.textContent.includes(selectedCategory) || 
+                    (selectedCategory === 'all' && btn.classList.contains('all'))) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Zaktualizuj przegląd i scroll do produktu
+            updateOverview();
+            
+            setTimeout(() => {
+                const productCard = document.querySelector(`[data-product-id="${productId}"]`);
+                if (productCard) {
+                    productCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    // Dodaj flash efekt
+                    productCard.style.background = '#fff3cd';
+                    setTimeout(() => {
+                        productCard.style.background = '';
+                    }, 1500);
+                }
+            }, 100);
         }
 
         // Modals
@@ -899,8 +1071,14 @@
             }
             
             container.innerHTML = filteredProducts.map(product => `
-                <div class="product-card">
-                    ${product.image ? `<img src="${product.image}" class="product-image">` : `<div class="product-image"></div>`}
+                <div class="product-card" data-product-id="${product.id}">
+                    <div class="product-image-wrapper">
+                        ${product.image ? `<img src="${product.image}" class="product-image">` : `<div class="product-image"></div>`}
+                        <div class="product-image-overlay">
+                            <button class="product-overlay-btn product-overlay-btn-receive" onclick="quickReceiveProduct('${product.id}')">➕ Przyjmij</button>
+                            <button class="product-overlay-btn product-overlay-btn-release" onclick="quickReleaseModal('${product.id}')">📤 Wydanie</button>
+                        </div>
+                    </div>
                     <div class="product-name">${product.name}</div>
                     <div class="product-info">🏷️ ${product.category || 'Bez kategorii'}</div>
                     <div class="product-info">📍 ${product.location || 'Nie określono'}</div>
