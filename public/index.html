@@ -1078,6 +1078,7 @@
                     if (response.ok) {
                         await loadData();
                         updateOverview();
+                        renderProducts();
                         alert(`✅ Przyjęto ${quantity} szt. ${product.name}!\nNowa ilość: ${newQuantity} szt.`);
                     }
                 } catch (error) {
@@ -1136,8 +1137,14 @@
                     if (releaseResponse.ok) {
                         await loadData();
                         updateOverview();
+                        renderProducts();
+                        renderReleases();
                         alert(`✅ Zarejestrowano wydanie!\nProdukt: ${product.name}\nIlość: ${quantity} szt.\nOsoba: ${person}\nNowa ilość w magazynie: ${newQuantity} szt.`);
+                    } else {
+                        alert('❌ Błąd rejestrowania wydania w historii.');
                     }
+                } else {
+                    alert('❌ Błąd aktualizacji ilości produktu.');
                 }
             } catch (error) {
                 alert('❌ Błąd rejestrowania wydania.');
