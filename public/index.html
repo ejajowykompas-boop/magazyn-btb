@@ -253,13 +253,78 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
 
+        .product-image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
         .product-image {
             width: 100%;
             height: 200px;
             object-fit: cover;
             border-radius: 8px;
-            margin-bottom: 15px;
             background: #dee2e6;
+            transition: opacity 0.3s;
+        }
+
+        .product-image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 8px;
+        }
+
+        .product-image-wrapper:hover .product-image-overlay {
+            opacity: 1;
+        }
+
+        .product-image-wrapper:hover .product-image {
+            opacity: 0.7;
+        }
+
+        .product-overlay-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            width: 90%;
+            max-width: 150px;
+        }
+
+        .product-overlay-btn-receive {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .product-overlay-btn-receive:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .product-overlay-btn-release {
+            background: linear-gradient(135deg, #dc3545 0%, #ff6b6b 100%);
+        }
+
+        .product-overlay-btn-release:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
         }
 
         .product-name {
@@ -854,7 +919,13 @@
             
             container.innerHTML = filteredProducts.map(product => `
                 <div class="product-card">
-                    ${product.image ? `<img src="${product.image}" class="product-image">` : `<div class="product-image"></div>`}
+                    <div class="product-image-wrapper">
+                        ${product.image ? `<img src="${product.image}" class="product-image">` : `<div class="product-image"></div>`}
+                        <div class="product-image-overlay">
+                            <button class="product-overlay-btn product-overlay-btn-receive" onclick="quickReceiveProduct('${product.id}')">➕ Przyjmij</button>
+                            <button class="product-overlay-btn product-overlay-btn-release" onclick="quickReleaseModal('${product.id}')">📤 Wydanie</button>
+                        </div>
+                    </div>
                     <div class="product-name">${product.name}</div>
                     <div class="product-info">📍 ${product.location || 'Nie określono'}</div>
                     <div class="product-info">📝 ${product.description || 'Brak opisu'}</div>
@@ -987,6 +1058,89 @@
                 } catch (error) {
                     alert('❌ Błąd aktualizacji produktu.');
                 }
+            }
+        }
+
+        // Szybkie przyjęcie produktu (zwiększenie ilości)
+        async function quickReceiveProduct(id) {
+            const product = products.find(p => p.id === id);
+            const quantity = prompt(`Ile sztuk ${product.name} przyjmujesz?\n\nAktualna ilość: ${product.quantity} szt.`, '1');
+            
+            if (quantity !== null && !isNaN(quantity) && parseInt(quantity) > 0) {
+                const newQuantity = product.quantity + parseInt(quantity);
+                try {
+                    const response = await fetch(`${API_URL}/products/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ quantity: newQuantity })
+                    });
+                    
+                    if (response.ok) {
+                        await loadData();
+                        updateOverview();
+                        alert(`✅ Przyjęto ${quantity} szt. ${product.name}!\nNowa ilość: ${newQuantity} szt.`);
+                    }
+                } catch (error) {
+                    alert('❌ Błąd przyjęcia produktu.');
+                }
+            }
+        }
+
+        // Szybkie wydanie produktu
+        function quickReleaseModal(id) {
+            const product = products.find(p => p.id === id);
+            const quantity = prompt(`Ile sztuk ${product.name} wydajesz?\n\nDostępne: ${product.quantity} szt.`, '1');
+            
+            if (quantity !== null && !isNaN(quantity) && parseInt(quantity) > 0) {
+                const releaseQty = parseInt(quantity);
+                
+                if (product.quantity < releaseQty) {
+                    alert(`❌ Niewystarczająca ilość!\nDostępne: ${product.quantity} szt.\nZażądane: ${releaseQty} szt.`);
+                    return;
+                }
+                
+                const person = prompt(`Dla kogo jest to wydanie?\n\nProdukt: ${product.name}\nIlość: ${releaseQty} szt.`, '');
+                
+                if (person !== null && person.trim() !== '') {
+                    quickReleaseProduct(id, releaseQty, person);
+                }
+            }
+        }
+
+        // Szybkie wydanie produktu (zmniejszenie ilości)
+        async function quickReleaseProduct(id, quantity, person) {
+            const product = products.find(p => p.id === id);
+            const newQuantity = product.quantity - quantity;
+            
+            try {
+                const response = await fetch(`${API_URL}/products/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantity: newQuantity })
+                });
+                
+                if (response.ok) {
+                    // Rejestruj wydanie
+                    const release = {
+                        productId: id,
+                        quantity: quantity,
+                        person: person
+                    };
+                    
+                    const releaseResponse = await fetch(`${API_URL}/releases`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(release)
+                    });
+                    
+                    if (releaseResponse.ok) {
+                        await loadData();
+                        updateOverview();
+                        alert(`✅ Zarejestrowano wydanie!\nProdukt: ${product.name}\nIlość: ${quantity} szt.\nOsoba: ${person}\nNowa ilość w magazynie: ${newQuantity} szt.`);
+                    }
+                }
+            } catch (error) {
+                alert('❌ Błąd rejestrowania wydania.');
             }
         }
 
