@@ -13,9 +13,10 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #ebdcc6 0%, #eead52 100%);
             min-height: 100vh;
             padding: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .container {
@@ -28,7 +29,7 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #f36806 0%, #e2bb85 100%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -37,6 +38,7 @@
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
 
         .sync-status {
@@ -73,6 +75,7 @@
             font-weight: 600;
             color: #495057;
             transition: all 0.3s;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .tab:hover {
@@ -85,8 +88,67 @@
             border-bottom: 3px solid #667eea;
         }
 
+        .main-wrapper {
+            display: flex;
+            min-height: calc(100vh - 250px);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #f8f9fa;
+            border-right: 2px solid #dee2e6;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-title {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: #212529;
+            margin-bottom: 15px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .category-list {
+            list-style: none;
+        }
+
+        .category-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #495057;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .category-item:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .category-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .category-item.all {
+            font-weight: 700;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+
         .content {
+            flex: 1;
             padding: 30px;
+            overflow-y: auto;
         }
 
         .tab-content {
@@ -106,6 +168,7 @@
             margin-bottom: 8px;
             font-weight: 600;
             color: #495057;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         input[type="text"],
@@ -141,6 +204,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
         .btn-primary {
@@ -203,6 +267,7 @@
             font-weight: 700;
             color: #212529;
             margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .product-info {
@@ -243,6 +308,7 @@
             background: #f8f9fa;
             font-weight: 600;
             color: #495057;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
 
         tr:hover {
@@ -281,6 +347,7 @@
             font-weight: 700;
             margin-bottom: 20px;
             color: #212529;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .modal-actions {
@@ -400,6 +467,19 @@
             <button class="tab" onclick="switchTab('history')">📜 Historia</button>
         </div>
 
+        <div class="main-wrapper">
+            <div class="sidebar" id="sidebar">
+                <div class="sidebar-title">🏷️ Kategorie</div>
+                <ul class="category-list">
+                    <li class="category-item all active" onclick="filterByCategory('all')">Wszystkie produkty</li>
+                    <li class="category-item" onclick="filterByCategory('Iniekcje')">Iniekcje</li>
+                    <li class="category-item" onclick="filterByCategory('Pompa 1k')">Pompa 1k</li>
+                    <li class="category-item" onclick="filterByCategory('Pompa 2k')">Pompa 2k</li>
+                    <li class="category-item" onclick="filterByCategory('Materiały budowlane')">Materiały budowlane</li>
+                    <li class="category-item" onclick="filterByCategory('Sprzęt')">Sprzęt</li>
+                </ul>
+            </div>
+
         <div class="content">
             <!-- PRZEGLĄD -->
             <div id="overview" class="tab-content active">
@@ -463,6 +543,7 @@
                 </table>
             </div>
         </div>
+        </div>
     </div>
 
     <!-- MODAL DODAWANIA PRODUKTU -->
@@ -473,6 +554,17 @@
                 <div class="form-group">
                     <label>Nazwa produktu *</label>
                     <input type="text" id="productName" required>
+                </div>
+                <div class="form-group">
+                    <label>Kategoria *</label>
+                    <select id="productCategory" required>
+                        <option value="">Wybierz kategorię</option>
+                        <option value="Iniekcje">Iniekcje</option>
+                        <option value="Pompa 1k">Pompa 1k</option>
+                        <option value="Pompa 2k">Pompa 2k</option>
+                        <option value="Materiały budowlane">Materiały budowlane</option>
+                        <option value="Sprzęt">Sprzęt</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Opis</label>
@@ -543,6 +635,7 @@
         let releases = [];
         let history = [];
         let isOnline = true;
+        let selectedCategory = 'all';
 
         // Inicjalizacja
         async function init() {
@@ -605,6 +698,17 @@
             if (tabName === 'history') renderHistory();
         }
 
+        // Filtrowanie po kategorii
+        function filterByCategory(category) {
+            selectedCategory = category;
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderProducts();
+            updateOverview();
+        }
+
         // Modals
         function showAddProductModal() {
             document.getElementById('addProductModal').classList.add('active');
@@ -659,6 +763,7 @@
             
             const product = {
                 name: document.getElementById('productName').value,
+                category: document.getElementById('productCategory').value,
                 description: document.getElementById('productDescription').value,
                 location: document.getElementById('productLocation').value,
                 quantity: parseInt(document.getElementById('productQuantity').value),
@@ -731,7 +836,12 @@
         function renderProducts() {
             const container = document.getElementById('productsList');
             
-            if (products.length === 0) {
+            // Filtruj produkty po kategorii
+            const filteredProducts = selectedCategory === 'all' 
+                ? products 
+                : products.filter(p => p.category === selectedCategory);
+            
+            if (filteredProducts.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📦</div>
@@ -742,7 +852,7 @@
                 return;
             }
             
-            container.innerHTML = products.map(product => `
+            container.innerHTML = filteredProducts.map(product => `
                 <div class="product-card">
                     ${product.image ? `<img src="${product.image}" class="product-image">` : `<div class="product-image"></div>`}
                     <div class="product-name">${product.name}</div>
@@ -796,13 +906,18 @@
         }
 
         function updateOverview() {
-            document.getElementById('totalProducts').textContent = products.length;
-            document.getElementById('totalStock').textContent = products.reduce((sum, p) => sum + p.quantity, 0);
+            // Filtruj produkty po kategorii
+            const filteredProducts = selectedCategory === 'all' 
+                ? products 
+                : products.filter(p => p.category === selectedCategory);
+            
+            document.getElementById('totalProducts').textContent = filteredProducts.length;
+            document.getElementById('totalStock').textContent = filteredProducts.reduce((sum, p) => sum + p.quantity, 0);
             document.getElementById('totalReleases').textContent = releases.length;
             
             const container = document.getElementById('overviewProducts');
             
-            if (products.length === 0) {
+            if (filteredProducts.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📦</div>
@@ -813,13 +928,19 @@
                 return;
             }
             
-            container.innerHTML = products.map(product => `
+            container.innerHTML = filteredProducts.map(product => `
                 <div class="product-card">
                     ${product.image ? `<img src="${product.image}" class="product-image">` : `<div class="product-image"></div>`}
                     <div class="product-name">${product.name}</div>
+                    <div class="product-info">🏷️ ${product.category || 'Bez kategorii'}</div>
                     <div class="product-info">📍 ${product.location || 'Nie określono'}</div>
+                    <div class="product-info">📝 ${product.description || 'Brak opisu'}</div>
                     <div class="product-stock ${product.quantity < 10 ? 'low' : ''}">
                         Stan: ${product.quantity} szt.
+                    </div>
+                    <div class="product-actions">
+                        <button class="btn btn-primary btn-small" onclick="editProduct('${product.id}')">✏️ Edytuj</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteProduct('${product.id}')">🗑️ Usuń</button>
                     </div>
                 </div>
             `).join('');
