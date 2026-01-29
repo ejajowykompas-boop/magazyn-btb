@@ -528,7 +528,6 @@
         <div class="tabs">
             <button class="tab active" onclick="switchTab('overview')">📊 Przegląd</button>
             <button class="tab" onclick="switchTab('products')">📦 Produkty</button>
-            <button class="tab" onclick="switchTab('releases')">📤 Wydania</button>
             <button class="tab" onclick="switchTab('history')">📜 Historia</button>
         </div>
 
@@ -571,25 +570,6 @@
             <div id="products" class="tab-content">
                 <button class="btn btn-primary" onclick="showAddProductModal()">➕ Dodaj nowy produkt</button>
                 <div id="productsList" class="product-grid"></div>
-            </div>
-
-            <!-- WYDANIA -->
-            <div id="releases" class="tab-content">
-                <button class="btn btn-primary" onclick="showReleaseModal()">📤 Zarejestruj wydanie</button>
-                <div id="recentReleases">
-                    <h3 style="margin: 20px 0;">Ostatnie wydania</h3>
-                    <table id="releasesTable">
-                        <thead>
-                            <tr>
-                                <th>Data i godzina</th>
-                                <th>Produkt</th>
-                                <th>Ilość</th>
-                                <th>Osoba</th>
-                            </tr>
-                        </thead>
-                        <tbody id="releasesTableBody"></tbody>
-                    </table>
-                </div>
             </div>
 
             <!-- HISTORIA -->
@@ -656,34 +636,6 @@
                 <div class="modal-actions">
                     <button type="button" class="btn btn-warning" onclick="closeModal('addProductModal')">Anuluj</button>
                     <button type="submit" class="btn btn-primary">Dodaj produkt</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL WYDANIA -->
-    <div id="releaseModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">Zarejestruj wydanie z magazynu</div>
-            <form id="releaseForm">
-                <div class="form-group">
-                    <label>Produkt *</label>
-                    <select id="releaseProduct" required>
-                        <option value="">Wybierz produkt</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Ilość *</label>
-                    <input type="number" id="releaseQuantity" min="1" required>
-                    <small id="availableStock" style="color: #6c757d;"></small>
-                </div>
-                <div class="form-group">
-                    <label>Osoba odbierająca *</label>
-                    <input type="text" id="releasePerson" required>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-warning" onclick="closeModal('releaseModal')">Anuluj</button>
-                    <button type="submit" class="btn btn-primary">Zarejestruj wydanie</button>
                 </div>
             </form>
         </div>
@@ -808,18 +760,6 @@
             }
         });
 
-        // Dostępny stan
-        document.getElementById('releaseProduct').addEventListener('change', function() {
-            const productId = this.value;
-            const stockInfo = document.getElementById('availableStock');
-            if (productId) {
-                const product = products.find(p => p.id === productId);
-                stockInfo.textContent = `Dostępne: ${product.quantity} sztuk`;
-            } else {
-                stockInfo.textContent = '';
-            }
-        });
-
         // Dodawanie produktu
         document.getElementById('addProductForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -853,47 +793,6 @@
                 }
             } catch (error) {
                 alert('❌ Błąd dodawania produktu. Sprawdź połączenie.');
-            }
-        });
-
-        // Rejestrowanie wydania
-        document.getElementById('releaseForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const productId = document.getElementById('releaseProduct').value;
-            const quantity = parseInt(document.getElementById('releaseQuantity').value);
-            const person = document.getElementById('releasePerson').value;
-            
-            const product = products.find(p => p.id === productId);
-            
-            if (product.quantity < quantity) {
-                alert('❌ Niewystarczająca ilość produktu w magazynie!');
-                return;
-            }
-            
-            const release = {
-                productId: productId,
-                quantity: quantity,
-                person: person
-            };
-            
-            try {
-                const response = await fetch(`${API_URL}/releases`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(release)
-                });
-                
-                if (response.ok) {
-                    await loadData();
-                    this.reset();
-                    closeModal('releaseModal');
-                    renderReleases();
-                    updateOverview();
-                    alert('✅ Wydanie zostało zarejestrowane!');
-                }
-            } catch (error) {
-                alert('❌ Błąd rejestrowania wydania. Sprawdź połączenie.');
             }
         });
 
@@ -1010,8 +909,8 @@
                         Stan: ${product.quantity} szt.
                     </div>
                     <div class="product-actions">
-                        <button class="btn btn-primary btn-small" onclick="editProduct('${product.id}')">✏️ Edytuj</button>
-                        <button class="btn btn-danger btn-small" onclick="deleteProduct('${product.id}')">🗑️ Usuń</button>
+                        <button class="btn btn-primary btn-small" onclick="quickReceiveProduct('${product.id}')">➕ Przyjmij</button>
+                        <button class="btn btn-danger btn-small" onclick="quickReleaseModal('${product.id}')">📤 Wydaj</button>
                     </div>
                 </div>
             `).join('');
