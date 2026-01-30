@@ -732,9 +732,20 @@
     </div>
 
     <script>
+        // Funkcja escapowania HTML - ochrona przed XSS
+        function escapeHtml(unsafe) {
+            if (unsafe === null || unsafe === undefined) return '';
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         // Konfiguracja API
-        const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000/api' 
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000/api'
             : '/api';
 
         // Dane aplikacji
@@ -778,11 +789,11 @@
                 }
                 
                 searchResults.innerHTML = filtered.map(product => `
-                    <div class="search-result-item" onclick="goToProduct('${product.id}')">
-                        ${product.image ? `<img src="${product.image}" class="search-result-image" alt="${product.name}">` : `<div class="search-result-image"></div>`}
+                    <div class="search-result-item" onclick="goToProduct('${escapeHtml(product.id)}')">
+                        ${product.image ? `<img src="${escapeHtml(product.image)}" class="search-result-image" alt="${escapeHtml(product.name)}">` : `<div class="search-result-image"></div>`}
                         <div class="search-result-content">
-                            <div class="search-result-name">${product.name}</div>
-                            <div class="search-result-category">🏷️ ${product.category || 'Bez kategorii'} | Stan: ${product.quantity} szt.</div>
+                            <div class="search-result-name">${escapeHtml(product.name)}</div>
+                            <div class="search-result-category">🏷️ ${escapeHtml(product.category || 'Bez kategorii')} | Stan: ${escapeHtml(product.quantity)} szt.</div>
                         </div>
                     </div>
                 `).join('');
@@ -1010,21 +1021,21 @@
             container.innerHTML = filteredProducts.map(product => `
                 <div class="product-card">
                     <div class="product-image-wrapper">
-                        ${product.image ? `<img src="${product.image}" class="product-image">` : `<div class="product-image"></div>`}
+                        ${product.image ? `<img src="${escapeHtml(product.image)}" class="product-image" alt="${escapeHtml(product.name)}">` : `<div class="product-image"></div>`}
                         <div class="product-image-overlay">
-                            <button class="product-overlay-btn product-overlay-btn-receive" onclick="quickReceiveProduct('${product.id}')">➕ Przyjmij</button>
-                            <button class="product-overlay-btn product-overlay-btn-release" onclick="quickReleaseModal('${product.id}')">📤 Wydanie</button>
+                            <button class="product-overlay-btn product-overlay-btn-receive" onclick="quickReceiveProduct('${escapeHtml(product.id)}')">➕ Przyjmij</button>
+                            <button class="product-overlay-btn product-overlay-btn-release" onclick="quickReleaseModal('${escapeHtml(product.id)}')">📤 Wydanie</button>
                         </div>
                     </div>
-                    <div class="product-name">${product.name}</div>
-                    <div class="product-info">📍 ${product.location || 'Nie określono'}</div>
-                    <div class="product-info">📝 ${product.description || 'Brak opisu'}</div>
+                    <div class="product-name">${escapeHtml(product.name)}</div>
+                    <div class="product-info">📍 ${escapeHtml(product.location || 'Nie określono')}</div>
+                    <div class="product-info">📝 ${escapeHtml(product.description || 'Brak opisu')}</div>
                     <div class="product-stock ${product.quantity < 10 ? 'low' : ''}">
-                        Stan: ${product.quantity} szt.
+                        Stan: ${escapeHtml(product.quantity)} szt.
                     </div>
                     <div class="product-actions">
-                        <button class="btn btn-primary btn-small" onclick="editProduct('${product.id}')">✏️ Edytuj</button>
-                        <button class="btn btn-danger btn-small" onclick="deleteProduct('${product.id}')">🗑️ Usuń</button>
+                        <button class="btn btn-primary btn-small" onclick="editProduct('${escapeHtml(product.id)}')">✏️ Edytuj</button>
+                        <button class="btn btn-danger btn-small" onclick="deleteProduct('${escapeHtml(product.id)}')">🗑️ Usuń</button>
                     </div>
                 </div>
             `).join('');
@@ -1040,10 +1051,10 @@
             
             tbody.innerHTML = releases.slice().reverse().slice(0, 50).map(release => `
                 <tr>
-                    <td>${formatDate(release.date)}</td>
-                    <td>${release.productName}</td>
-                    <td>${release.quantity} szt.</td>
-                    <td>${release.person}</td>
+                    <td>${escapeHtml(formatDate(release.date))}</td>
+                    <td>${escapeHtml(release.productName)}</td>
+                    <td>${escapeHtml(release.quantity)} szt.</td>
+                    <td>${escapeHtml(release.person)}</td>
                 </tr>
             `).join('');
         }
@@ -1058,10 +1069,10 @@
             
             tbody.innerHTML = history.map(entry => `
                 <tr>
-                    <td>${formatDate(entry.date)}</td>
-                    <td>${entry.type}</td>
-                    <td>${entry.product}</td>
-                    <td>${entry.details}</td>
+                    <td>${escapeHtml(formatDate(entry.date))}</td>
+                    <td>${escapeHtml(entry.type)}</td>
+                    <td>${escapeHtml(entry.product)}</td>
+                    <td>${escapeHtml(entry.details)}</td>
                 </tr>
             `).join('');
         }
@@ -1090,24 +1101,24 @@
             }
             
             container.innerHTML = filteredProducts.map(product => `
-                <div class="product-card" data-product-id="${product.id}">
+                <div class="product-card" data-product-id="${escapeHtml(product.id)}">
                     <div class="product-image-wrapper">
-                        ${product.image ? `<img src="${product.image}" class="product-image">` : `<div class="product-image"></div>`}
+                        ${product.image ? `<img src="${escapeHtml(product.image)}" class="product-image" alt="${escapeHtml(product.name)}">` : `<div class="product-image"></div>`}
                         <div class="product-image-overlay">
-                            <button class="product-overlay-btn product-overlay-btn-receive" onclick="quickReceiveProduct('${product.id}')">➕ Przyjmij</button>
-                            <button class="product-overlay-btn product-overlay-btn-release" onclick="quickReleaseModal('${product.id}')">📤 Wydanie</button>
+                            <button class="product-overlay-btn product-overlay-btn-receive" onclick="quickReceiveProduct('${escapeHtml(product.id)}')">➕ Przyjmij</button>
+                            <button class="product-overlay-btn product-overlay-btn-release" onclick="quickReleaseModal('${escapeHtml(product.id)}')">📤 Wydanie</button>
                         </div>
                     </div>
-                    <div class="product-name">${product.name}</div>
-                    <div class="product-info">🏷️ ${product.category || 'Bez kategorii'}</div>
-                    <div class="product-info">📍 ${product.location || 'Nie określono'}</div>
-                    <div class="product-info">📝 ${product.description || 'Brak opisu'}</div>
+                    <div class="product-name">${escapeHtml(product.name)}</div>
+                    <div class="product-info">🏷️ ${escapeHtml(product.category || 'Bez kategorii')}</div>
+                    <div class="product-info">📍 ${escapeHtml(product.location || 'Nie określono')}</div>
+                    <div class="product-info">📝 ${escapeHtml(product.description || 'Brak opisu')}</div>
                     <div class="product-stock ${product.quantity < 10 ? 'low' : ''}">
-                        Stan: ${product.quantity} szt.
+                        Stan: ${escapeHtml(product.quantity)} szt.
                     </div>
                     <div class="product-actions">
-                        <button class="btn btn-primary btn-small" onclick="quickReceiveProduct('${product.id}')">➕ Przyjmij</button>
-                        <button class="btn btn-danger btn-small" onclick="quickReleaseModal('${product.id}')">📤 Wydaj</button>
+                        <button class="btn btn-primary btn-small" onclick="quickReceiveProduct('${escapeHtml(product.id)}')">➕ Przyjmij</button>
+                        <button class="btn btn-danger btn-small" onclick="quickReleaseModal('${escapeHtml(product.id)}')">📤 Wydaj</button>
                     </div>
                 </div>
             `).join('');
@@ -1116,7 +1127,7 @@
         // Usuwanie produktu
         async function deleteProduct(id) {
             const product = products.find(p => p.id === id);
-            if (confirm(`Czy na pewno chcesz usunąć produkt "${product.name}"?`)) {
+            if (confirm(`Czy na pewno chcesz usunąć produkt "${escapeHtml(product.name)}"?`)) {
                 try {
                     const response = await fetch(`${API_URL}/products/${id}`, {
                         method: 'DELETE'
@@ -1136,7 +1147,7 @@
         // Edycja produktu
         async function editProduct(id) {
             const product = products.find(p => p.id === id);
-            const newQuantity = prompt(`Aktualna ilość: ${product.quantity}\nPodaj nową ilość:`, product.quantity);
+            const newQuantity = prompt(`Aktualna ilość: ${escapeHtml(product.quantity)}\nPodaj nową ilość:`, product.quantity);
             
             if (newQuantity !== null && !isNaN(newQuantity)) {
                 try {
@@ -1160,7 +1171,7 @@
         // Szybkie przyjęcie produktu (zwiększenie ilości)
         async function quickReceiveProduct(id) {
             const product = products.find(p => p.id === id);
-            const quantity = prompt(`Ile sztuk ${product.name} przyjmujesz?\n\nAktualna ilość: ${product.quantity} szt.`, '1');
+            const quantity = prompt(`Ile sztuk ${escapeHtml(product.name)} przyjmujesz?\n\nAktualna ilość: ${escapeHtml(product.quantity)} szt.`, '1');
             
             if (quantity !== null && !isNaN(quantity) && parseInt(quantity) > 0) {
                 const newQuantity = product.quantity + parseInt(quantity);
@@ -1175,7 +1186,7 @@
                         await loadData();
                         updateOverview();
                         renderProducts();
-                        alert(`✅ Przyjęto ${quantity} szt. ${product.name}!\nNowa ilość: ${newQuantity} szt.`);
+                        alert(`✅ Przyjęto ${escapeHtml(quantity)} szt. ${escapeHtml(product.name)}!\nNowa ilość: ${escapeHtml(newQuantity)} szt.`);
                     }
                 } catch (error) {
                     alert('❌ Błąd przyjęcia produktu.');
@@ -1186,18 +1197,18 @@
         // Szybkie wydanie produktu
         function quickReleaseModal(id) {
             const product = products.find(p => p.id === id);
-            const quantity = prompt(`Ile sztuk ${product.name} wydajesz?\n\nDostępne: ${product.quantity} szt.`, '1');
-            
+            const quantity = prompt(`Ile sztuk ${escapeHtml(product.name)} wydajesz?\n\nDostępne: ${escapeHtml(product.quantity)} szt.`, '1');
+
             if (quantity !== null && !isNaN(quantity) && parseInt(quantity) > 0) {
                 const releaseQty = parseInt(quantity);
-                
+
                 if (product.quantity < releaseQty) {
-                    alert(`❌ Niewystarczająca ilość!\nDostępne: ${product.quantity} szt.\nZażądane: ${releaseQty} szt.`);
+                    alert(`❌ Niewystarczająca ilość!\nDostępne: ${escapeHtml(product.quantity)} szt.\nZażądane: ${escapeHtml(releaseQty)} szt.`);
                     return;
                 }
-                
-                const person = prompt(`Dla kogo jest to wydanie?\n\nProdukt: ${product.name}\nIlość: ${releaseQty} szt.`, '');
-                
+
+                const person = prompt(`Dla kogo jest to wydanie?\n\nProdukt: ${escapeHtml(product.name)}\nIlość: ${escapeHtml(releaseQty)} szt.`, '');
+
                 if (person !== null && person.trim() !== '') {
                     quickReleaseProduct(id, releaseQty, person);
                 }
@@ -1227,7 +1238,7 @@
                     updateOverview();
                     renderProducts();
                     const newQuantity = product.quantity - quantity;
-                    alert(`✅ Zarejestrowano wydanie!\nProdukt: ${product.name}\nIlość: ${quantity} szt.\nOsoba: ${person}\nNowa ilość w magazynie: ${newQuantity} szt.`);
+                    alert(`✅ Zarejestrowano wydanie!\nProdukt: ${escapeHtml(product.name)}\nIlość: ${escapeHtml(quantity)} szt.\nOsoba: ${escapeHtml(person)}\nNowa ilość w magazynie: ${escapeHtml(newQuantity)} szt.`);
                 } else {
                     alert('❌ Błąd rejestrowania wydania.');
                 }
