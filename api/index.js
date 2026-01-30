@@ -1,8 +1,30 @@
 const express = require('express');
 const cors = require('cors');
-const { kv } = require('@vercel/kv');
 
 const app = express();
+
+// Sprawdź czy Vercel KV jest dostępny
+let kv;
+let useInMemoryFallback = false;
+
+try {
+  kv = require('@vercel/kv').kv;
+  // Sprawdź czy zmienne środowiskowe są ustawione
+  if (!process.env.KV_REST_API_URL || !process.env.KV_REST_API_TOKEN) {
+    console.warn('⚠️  Vercel KV zmienne środowiskowe nie są ustawione. Używam pamięci RAM (dane zostaną utracone po restarcie).');
+    useInMemoryFallback = true;
+  }
+} catch (error) {
+  console.warn('⚠️  Vercel KV niedostępny. Używam pamięci RAM (dane zostaną utracone po restarcie).');
+  useInMemoryFallback = true;
+}
+
+// Fallback do in-memory storage dla development
+const inMemoryStorage = {
+  products: [],
+  releases: [],
+  history: []
+};
 
 // Konfiguracja CORS - whitelist dozwolonych domen
 const allowedOrigins = [
@@ -11,30 +33,43 @@ const allowedOrigins = [
   'http://localhost:8080',           // Development - inne narzędzia
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173',
-  // Dodaj tutaj URL swojej domeny Vercel po wdrożeniu
-  // 'https://magazyn-btb.vercel.app',
-  // 'https://your-custom-domain.com'
 ];
 
-// Dodaj domenę z zmiennej środowiskowej (dla Vercel)
+// Automatycznie dodaj domenę Vercel
+if (process.env.VERCEL_URL) {
+  // VERCEL_URL nie zawiera protokołu, dodajemy https://
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+  console.log(`📍 Dodano domenę Vercel do CORS: https://${process.env.VERCEL_URL}`);
+}
+
+// Dodaj domenę z zmiennej środowiskowej (dla custom domain)
 if (process.env.FRONTEND_URL) {
   allowedOrigins.push(process.env.FRONTEND_URL);
+  console.log(`📍 Dodano custom domenę do CORS: ${process.env.FRONTEND_URL}`);
 }
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Pozwól na requesty bez origin (np. Postman, curl, mobile apps)
-    // W produkcji rozważ usunięcie tego warunku dla większego bezpieczeństwa
-    if (!origin && process.env.NODE_ENV !== 'production') {
+    // Pozwól na requesty bez origin (np. same-origin na Vercel, Postman, curl)
+    if (!origin) {
       return callback(null, true);
     }
 
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      console.warn(`CORS blocked request from origin: ${origin}`);
-      callback(new Error('Dostęp zablokowany przez CORS. Origin nie jest dozwolony.'));
+    // Sprawdź czy origin jest na whitelist
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
     }
+
+    // Jeśli to Vercel deployment preview (zawiera vercel.app)
+    if (origin.includes('.vercel.app')) {
+      console.log(`✅ Dozwolono Vercel preview: ${origin}`);
+      return callback(null, true);
+    }
+
+    // Zablokuj nieznane origins
+    console.warn(`❌ CORS blocked request from origin: ${origin}`);
+    console.warn(`   Dozwolone origins: ${allowedOrigins.join(', ')}`);
+    callback(new Error('Dostęp zablokowany przez CORS. Origin nie jest dozwolony.'));
   },
   credentials: true,
   optionsSuccessStatus: 200,
@@ -52,8 +87,12 @@ const KV_KEYS = {
   HISTORY: 'magazyn:history'
 };
 
-// Funkcje pomocnicze dla Vercel KV
+// Funkcje pomocnicze dla Vercel KV z fallback do in-memory
 async function getProducts() {
+  if (useInMemoryFallback) {
+    return inMemoryStorage.products;
+  }
+
   try {
     const products = await kv.get(KV_KEYS.PRODUCTS);
     return products || [];
@@ -64,6 +103,11 @@ async function getProducts() {
 }
 
 async function setProducts(products) {
+  if (useInMemoryFallback) {
+    inMemoryStorage.products = products;
+    return true;
+  }
+
   try {
     await kv.set(KV_KEYS.PRODUCTS, products);
     return true;
@@ -74,6 +118,10 @@ async function setProducts(products) {
 }
 
 async function getReleases() {
+  if (useInMemoryFallback) {
+    return inMemoryStorage.releases;
+  }
+
   try {
     const releases = await kv.get(KV_KEYS.RELEASES);
     return releases || [];
@@ -84,6 +132,11 @@ async function getReleases() {
 }
 
 async function setReleases(releases) {
+  if (useInMemoryFallback) {
+    inMemoryStorage.releases = releases;
+    return true;
+  }
+
   try {
     await kv.set(KV_KEYS.RELEASES, releases);
     return true;
@@ -94,6 +147,10 @@ async function setReleases(releases) {
 }
 
 async function getHistory() {
+  if (useInMemoryFallback) {
+    return inMemoryStorage.history;
+  }
+
   try {
     const history = await kv.get(KV_KEYS.HISTORY);
     return history || [];
@@ -104,6 +161,11 @@ async function getHistory() {
 }
 
 async function setHistory(history) {
+  if (useInMemoryFallback) {
+    inMemoryStorage.history = history;
+    return true;
+  }
+
   try {
     await kv.set(KV_KEYS.HISTORY, history);
     return true;
@@ -471,13 +533,18 @@ app.post('/api/releases', async (req, res) => {
 });
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
   try {
+    const [products, releases] = await Promise.all([
+      getProducts(),
+      getReleases()
+    ]);
+
     res.json({
       status: 'OK',
       timestamp: new Date().toISOString(),
-      products: data.products.length,
-      releases: data.releases.length
+      products: products.length,
+      releases: releases.length
     });
   } catch (error) {
     console.error('Błąd health check:', error);
@@ -509,8 +576,19 @@ app.use((error, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log('=================================');
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+  if (useInMemoryFallback) {
+    console.log('⚠️  Storage: IN-MEMORY (dane zostaną utracone po restarcie)');
+    console.log('💡 Aby użyć Vercel KV, ustaw zmienne środowiskowe:');
+    console.log('   KV_REST_API_URL, KV_REST_API_TOKEN');
+  } else {
+    console.log('✅ Storage: VERCEL KV (trwałe dane)');
+  }
+
+  console.log('=================================');
 });
 
 module.exports = app;
